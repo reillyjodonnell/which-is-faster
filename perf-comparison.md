@@ -3,139 +3,135 @@
 **Analysis Date:** 2026-03-15
 **Test Conditions:** 4x CPU Throttling (simulating slower device)
 
-## Executive Summary
+## Executive Summary (Normalized)
 
-| Metric                  | inline  | useLayoutEffect | refCallback | Winner |
-| ----------------------- | ------- | --------------- | ----------- | ------ |
-| **Trace Duration**      | 5,338ms | 5,670ms         | 5,699ms     | inline |
-| **Dropped Frames**      | 493     | 521             | 525         | inline |
-| **Total Blocking Time** | 2,233ms | 2,495ms         | 2,607ms     | inline |
-| **Scripting Time**      | 4,691ms | 4,907ms         | 4,861ms     | inline |
-| **GC Time**             | 832ms   | 971ms           | 1,066ms     | inline |
-| **Tasks >200ms**        | 5       | 10              | 10          | inline |
+Since trace durations varied (5,338ms to 5,699ms), metrics are normalized for fair comparison:
 
-**Overall Winner: `inline`** - Demonstrates the best performance across all key metrics.
+| Metric                      | inline | useLayoutEffect | refCallback | Winner      |
+| --------------------------- | ------ | --------------- | ----------- | ----------- |
+| **TBT % of Duration**       | 41.8%  | 44.0%           | 45.8%       | inline      |
+| **GC % of Duration**        | 15.6%  | 17.1%           | 18.7%       | inline      |
+| **Scripting % of Duration** | 87.9%  | 86.6%           | 85.3%       | refCallback |
+| **Frame Drop Rate**         | 76.7%  | 76.2%           | 75.5%       | refCallback |
+| **Long Tasks >200ms/sec**   | 0.94   | 1.76            | 1.75        | inline      |
+
+**Overall Winner: `inline`** - Wins on blocking time (TBT), GC pressure, and severe long task frequency.
+
+**Note:** `refCallback` technically has the lowest frame drop rate and scripting percentage, but the differences are marginal (~1-2%). The more significant differences are in TBT and GC overhead where `inline` has a clear advantage.
 
 ---
 
-## Detailed Breakdown
+## Normalized Metrics (Per Second / Percentage)
 
-### 1. Frame Performance
+| Metric                      | inline    | useLayoutEffect | refCallback |
+| --------------------------- | --------- | --------------- | ----------- |
+| Trace Duration              | 5,338ms   | 5,670ms         | 5,699ms     |
+| Dropped Frames/sec          | 92.3      | 91.9            | 92.1        |
+| Frame Drop Rate             | 76.7%     | 76.2%           | 75.5%       |
+| **TBT/sec (ms)**            | **418**   | 440             | 458         |
+| **TBT % of Duration**       | **41.8%** | 44.0%           | 45.8%       |
+| Scripting % of Duration     | 87.9%     | 86.6%           | 85.3%       |
+| **GC % of Duration**        | **15.6%** | 17.1%           | 18.7%       |
+| Long Tasks (>50ms)/sec      | 6.18      | 5.82            | 5.44        |
+| **Long Tasks (>200ms)/sec** | **0.94**  | 1.76            | 1.75        |
 
-| Metric              | inline    | useLayoutEffect | refCallback |
-| ------------------- | --------- | --------------- | ----------- |
-| Total Frames        | 643       | 684             | 695         |
-| Dropped Frames      | 493       | 521             | 525         |
-| **Frame Drop Rate** | **76.7%** | **76.2%**       | **75.5%**   |
-| Presented Frames    | 33        | 32              | 30          |
+---
 
-**Analysis:** All three implementations show high frame drop rates due to heavy main thread work. The frame drop rates are similar (~75-77%), indicating that the rendering pipeline is similarly stressed in all cases. However, `inline` completes the work in fewer total frames, suggesting faster overall execution.
+## Raw Metrics (Absolute Values)
 
-### 2. Main Thread Blocking
+| Metric              | inline  | useLayoutEffect | refCallback |
+| ------------------- | ------- | --------------- | ----------- |
+| Trace Duration      | 5,338ms | 5,670ms         | 5,699ms     |
+| Total Frames        | 643     | 684             | 695         |
+| Dropped Frames      | 493     | 521             | 525         |
+| Total Blocking Time | 2,233ms | 2,495ms         | 2,607ms     |
+| Scripting Time      | 4,691ms | 4,907ms         | 4,861ms     |
+| GC Time             | 832ms   | 971ms           | 1,066ms     |
+| Tasks >50ms         | 33      | 33              | 31          |
+| Tasks >100ms        | 16      | 16              | 15          |
+| Tasks >200ms        | 5       | 10              | 10          |
 
-| Metric                        | inline      | useLayoutEffect | refCallback |
-| ----------------------------- | ----------- | --------------- | ----------- |
-| Total Tasks                   | 393         | 388             | 394         |
-| Tasks >50ms (Long Tasks)      | 33          | 33              | 31          |
-| Tasks >100ms                  | 16          | 16              | 15          |
-| Tasks >200ms                  | 5           | 10              | 10          |
-| **Total Blocking Time (TBT)** | **2,233ms** | **2,495ms**     | **2,607ms** |
+---
 
-**Analysis:**
+## Detailed Analysis
 
-- `inline` has the lowest Total Blocking Time (TBT), which is the sum of time beyond 50ms for all long tasks
-- `inline` has only 5 tasks exceeding 200ms, compared to 10 for both alternatives
-- This means `inline` distributes work more evenly, avoiding extremely long blocking periods
+### Total Blocking Time (TBT)
 
-### 3. Timing Breakdown
+TBT measures the sum of time beyond 50ms for all long tasks - a key interactivity metric.
 
-| Category               | inline  | useLayoutEffect | refCallback |
-| ---------------------- | ------- | --------------- | ----------- |
-| **Scripting**          | 4,691ms | 4,907ms         | 4,861ms     |
-| Style Calculations     | 70ms    | 67ms            | 65ms        |
-| Rendering/Composite    | 32ms    | 28ms            | 24ms        |
-| **Garbage Collection** | 832ms   | 971ms           | 1,066ms     |
+| Approach        | TBT     | TBT % of Duration | vs inline |
+| --------------- | ------- | ----------------- | --------- |
+| **inline**      | 2,233ms | 41.8%             | baseline  |
+| useLayoutEffect | 2,495ms | 44.0%             | +5.3%     |
+| refCallback     | 2,607ms | 45.8%             | +9.6%     |
 
-**Analysis:**
+**Interpretation:** `inline` spends proportionally less time blocking the main thread, leading to better potential interactivity.
 
-- `inline` spends ~216ms less on scripting than `useLayoutEffect` (4.4% improvement)
-- Most significantly, `inline` triggers 28% less garbage collection than `refCallback`
-- The lower GC time for `inline` suggests it creates fewer temporary objects or manages memory more efficiently
+### Garbage Collection
 
-### 4. Long Task Analysis (Top 5 by Duration)
+| Approach        | GC Time | GC % of Duration | vs inline |
+| --------------- | ------- | ---------------- | --------- |
+| **inline**      | 832ms   | 15.6%            | baseline  |
+| useLayoutEffect | 971ms   | 17.1%            | +9.6%     |
+| refCallback     | 1,066ms | 18.7%            | +19.9%    |
+
+**Interpretation:** `inline` creates less memory pressure. `refCallback` triggers ~20% more GC relative to its trace duration.
+
+### Severe Long Tasks (>200ms)
+
+| Approach        | Count | Per Second | vs inline |
+| --------------- | ----- | ---------- | --------- |
+| **inline**      | 5     | 0.94/sec   | baseline  |
+| useLayoutEffect | 10    | 1.76/sec   | +87%      |
+| refCallback     | 10    | 1.75/sec   | +86%      |
+
+**Interpretation:** `inline` has half the rate of severe blocking tasks, meaning smoother execution with fewer major jank events.
+
+### Frame Performance
+
+| Approach        | Drop Rate | Dropped/sec |
+| --------------- | --------- | ----------- |
+| inline          | 76.7%     | 92.3        |
+| useLayoutEffect | 76.2%     | 91.9        |
+| **refCallback** | **75.5%** | 92.1        |
+
+**Interpretation:** Frame drop rates are essentially equivalent (~1% difference). All approaches struggle equally with frame delivery due to heavy CPU work.
+
+---
+
+## Long Task Distribution (Top 5)
 
 #### inline
 
-| Rank | Duration | Notes              |
-| ---- | -------- | ------------------ |
-| 1    | 266ms    | Peak blocking task |
-| 2    | 229ms    |                    |
-| 3    | 222ms    |                    |
-| 4    | 204ms    |                    |
-| 5    | 202ms    |                    |
+| Rank | Duration |
+| ---- | -------- |
+| 1    | 266ms    |
+| 2    | 229ms    |
+| 3    | 222ms    |
+| 4    | 204ms    |
+| 5    | 202ms    |
 
 #### useLayoutEffect
 
-| Rank | Duration | Notes              |
-| ---- | -------- | ------------------ |
-| 1    | 256ms    | Peak blocking task |
-| 2    | 246ms    |                    |
-| 3    | 223ms    |                    |
-| 4    | 218ms    |                    |
-| 5    | 216ms    |                    |
+| Rank | Duration |
+| ---- | -------- |
+| 1    | 256ms    |
+| 2    | 246ms    |
+| 3    | 223ms    |
+| 4    | 218ms    |
+| 5    | 216ms    |
 
 #### refCallback
 
-| Rank | Duration | Notes              |
-| ---- | -------- | ------------------ |
-| 1    | 255ms    | Peak blocking task |
-| 2    | 240ms    |                    |
-| 3    | 240ms    |                    |
-| 4    | 229ms    |                    |
-| 5    | 228ms    |                    |
+| Rank | Duration |
+| ---- | -------- |
+| 1    | 255ms    |
+| 2    | 240ms    |
+| 3    | 240ms    |
+| 4    | 229ms    |
+| 5    | 228ms    |
 
-**Analysis:** While `inline` has the longest single task (266ms), its subsequent tasks drop off more quickly. `useLayoutEffect` and `refCallback` have more consistently long tasks in the 215-245ms range.
-
-### 5. Function Call Statistics
-
-All three implementations show React's scheduler as the dominant function:
-
-| Function                           | inline   | useLayoutEffect | refCallback |
-| ---------------------------------- | -------- | --------------- | ----------- |
-| `performWorkUntilDeadline` (total) | 4,580ms  | 4,805ms         | 4,743ms     |
-| `performWorkUntilDeadline` (avg)   | 68.4ms   | 73.9ms          | 72.9ms      |
-| `performWorkUntilDeadline` (max)   | 256ms    | 249ms           | N/A         |
-| `performWorkUntilDeadline` (count) | 67 calls | 65 calls        | N/A         |
-
-**Analysis:** The `inline` approach results in shorter average scheduler work batches (68.4ms vs 73.9ms), contributing to its lower Total Blocking Time.
-
----
-
-## Performance Rankings
-
-### By Total Blocking Time (Lower is Better)
-
-1. **inline** - 2,233ms
-2. useLayoutEffect - 2,495ms (+262ms / +11.7%)
-3. refCallback - 2,607ms (+374ms / +16.8%)
-
-### By Scripting Time (Lower is Better)
-
-1. **inline** - 4,691ms
-2. refCallback - 4,861ms (+170ms / +3.6%)
-3. useLayoutEffect - 4,907ms (+216ms / +4.6%)
-
-### By GC Pressure (Lower is Better)
-
-1. **inline** - 832ms
-2. useLayoutEffect - 971ms (+139ms / +16.7%)
-3. refCallback - 1,066ms (+234ms / +28.1%)
-
-### By Trace Duration (Lower is Better)
-
-1. **inline** - 5,338ms
-2. useLayoutEffect - 5,670ms (+332ms / +6.2%)
-3. refCallback - 5,699ms (+361ms / +6.8%)
+**Analysis:** `inline` has one outlier (266ms) but its other long tasks are shorter. `useLayoutEffect` and `refCallback` have more consistently severe long tasks.
 
 ---
 
@@ -143,22 +139,20 @@ All three implementations show React's scheduler as the dominant function:
 
 ### Use `inline` when:
 
-- Performance is critical
-- You want to minimize garbage collection overhead
-- You need the shortest possible execution time
-- You want to reduce Total Blocking Time (better interactivity)
+- You want the lowest Total Blocking Time (best interactivity)
+- You want to minimize GC overhead (-20% vs refCallback)
+- You need fewer severe jank events (half the rate of >200ms tasks)
 
-### Considerations for `useLayoutEffect`:
+### Consider `useLayoutEffect` when:
 
-- +11.7% higher Total Blocking Time than inline
-- Higher GC pressure (+16.7%)
-- May be necessary when you need synchronous DOM measurements before browser paint
+- You need synchronous DOM measurements before browser paint
+- Accept +5% higher TBT and +10% more GC overhead
 
-### Considerations for `refCallback`:
+### Consider `refCallback` when:
 
-- +16.8% higher Total Blocking Time than inline
-- Highest GC pressure (+28.1%)
-- Useful when you need to react to ref changes or when refs are set conditionally
+- You need to react to ref attachment/detachment
+- Refs are conditionally rendered
+- Accept +10% higher TBT and +20% more GC overhead
 
 ---
 
@@ -166,16 +160,16 @@ All three implementations show React's scheduler as the dominant function:
 
 - All traces recorded with **4x CPU throttling** to simulate mobile device performance
 - Traces captured from Chrome DevTools Performance panel
-- Total Blocking Time (TBT) measures time spent on tasks >50ms beyond the 50ms threshold
+- Total Blocking Time (TBT) = sum of (task_duration - 50ms) for all tasks >50ms
 - Frame rate target: 60 FPS (16.67ms per frame)
-- High frame drop rates across all implementations suggest the workload is CPU-intensive regardless of approach
+- High frame drop rates (~76%) across all implementations indicate CPU-bound workload
 
 ---
 
 ## File Information
 
-| File                    | Compressed Size | Uncompressed Size | Events    |
-| ----------------------- | --------------- | ----------------- | --------- |
-| inline.json.gz          | 14.5 MB         | 230 MB            | 1,200,296 |
-| useLayoutEffect.json.gz | 15.7 MB         | 257 MB            | 1,351,518 |
-| refCallback.json.gz     | 16.2 MB         | 268 MB            | 1,422,275 |
+| File                    | Compressed | Uncompressed | Events    | Duration |
+| ----------------------- | ---------- | ------------ | --------- | -------- |
+| inline.json.gz          | 14.5 MB    | 230 MB       | 1,200,296 | 5,338ms  |
+| useLayoutEffect.json.gz | 15.7 MB    | 257 MB       | 1,351,518 | 5,670ms  |
+| refCallback.json.gz     | 16.2 MB    | 268 MB       | 1,422,275 | 5,699ms  |
