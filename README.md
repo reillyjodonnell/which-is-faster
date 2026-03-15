@@ -1,73 +1,33 @@
-# React + TypeScript + Vite
+## Which is faster
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Saw a tweet today about which pattern was most performant:
 
-Currently, two official plugins are available:
+<blockquote class="twitter-tweet">
+  <p lang="en" dir="ltr">
+    genuine question for react heads, which of these is most performant?
+    Consider that we may have thousands of them all receiving new x y props on
+    each frame. <a href="https://t.co/t2tc7Z9qBG">pic.twitter.com/t2tc7Z9qBG</a>
+  </p>
+  &mdash; Steve Ruiz (@steveruizok){' '}
+  <a href="https://twitter.com/steveruizok/status/2033158878267875404?ref_src=twsrc%5Etfw">
+    March 15, 2026
+  </a>
+</blockquote>
+<script
+  async
+  src="https://platform.twitter.com/widgets.js"
+  charset="utf-8"
+></script>
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+My intuition thought that the minimal effects / work would win. So in this case I presumed A would win bc of it's doing
+the least amount of work - just object creation (fast in js)
 
-## React Compiler
+But tbh I didn't really know so I ran an experiment!
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## To run:
 
-## Expanding the ESLint configuration
+`bun i && bun run dev`
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Then use Chrome Performance tab, press play on the ui and record the results!
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Bonus points for feeding to claude and having it diff results.
