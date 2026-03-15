@@ -1,0 +1,205 @@
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.header h1 {
+  margin: 0 0 8px;
+  font-size: 24px;
+  color: #1a1a1a;
+}
+
+.header p {
+  margin: 0;
+  color: #666;
+}
+
+.controls {
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.control-group {
+  margin-bottom: 12px;
+}
+
+.control-group:last-child {
+  margin-bottom: 0;
+}
+
+.control-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.control-group input[type="range"] {
+  width: 100%;
+  cursor: pointer;
+}
+
+.button-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.button-group button,
+.control-group > button {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.15s ease;
+}
+
+.button-group button:hover,
+.control-group > button:hover {
+  background: #f0f0f0;
+}
+
+.button-group button.active {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+.control-group > button.primary {
+  background: #22c55e;
+  color: white;
+  border-color: #22c55e;
+}
+
+.control-group > button.primary:hover {
+  background: #16a34a;
+}
+
+.control-group > button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.benchmark-container {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #00ff88;
+  border-radius: 50%;
+  will-change: transform;
+  box-shadow: 0 0 6px #00ff88;
+}
+
+.pattern-info {
+  margin-top: 24px;
+}
+
+.pattern-info h2 {
+  font-size: 18px;
+  margin: 0 0 16px;
+}
+
+.pattern-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.pattern-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  background: #fafafa;
+  transition: all 0.2s ease;
+}
+
+.pattern-card.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.pattern-card h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+
+.pattern-card pre {
+  background: #1a1a1a;
+  color: #e0e0e0;
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  overflow-x: auto;
+  margin: 0 0 12px;
+}
+
+.pattern-card p {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+}
+
+@media (prefers-color-scheme: dark) {
+  .app {
+    color: #e0e0e0;
+  }
+
+  .header h1 {
+    color: #fff;
+  }
+
+  .header p {
+    color: #999;
+  }
+
+  .controls {
+    background: #2a2a2a;
+  }
+
+  .button-group button,
+  .control-group > button {
+    background: #333;
+    border-color: #444;
+    color: #e0e0e0;
+  }
+
+  .button-group button:hover,
+  .control-group > button:hover {
+    background: #444;
+  }
+
+  .pattern-card {
+    background: #2a2a2a;
+    border-color: #444;
+  }
+
+  .pattern-card.active {
+    background: #1e3a5f;
+    border-color: #2563eb;
+  }
+
+  .pattern-card p {
+    color: #999;
+  }
+}
